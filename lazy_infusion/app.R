@@ -1,7 +1,6 @@
 
 library(shiny)
-library(DT)
-library(tidyverse)
+
 
 # Define UI for application
 ui <- navbarPage(
