@@ -9,7 +9,7 @@ ui <- navbarPage(
            fluidPage(
              titlePanel("Hourly infusion rate"),
              navlistPanel(
-               id = "tabset",
+               id = "tabset", widths = c(2,10), fluid = F, well = F,
                
                "Vasopressor",
                tabPanel("Norepinefrine",
@@ -21,7 +21,7 @@ ui <- navbarPage(
                                  sliderInput("nor_amount", "Amount Dispensed (each ampul 4mg/4ml)", value = 1, min = 1, max = 4),
                                  selectInput("nor_syringe", "Total Dilution (ml)", choices = c(50,20), selected = 50)
                                  ),
-                          column(6,"hello")
+                          column(6,"Explanation")
                         ),
                         fluidRow(
                           column(12, 
@@ -36,8 +36,52 @@ ui <- navbarPage(
                         )
                         ),
                
-               tabPanel("Dobutamine", "dobu"),
-               tabPanel("Dopamine", "dopa"),
+               tabPanel("Dobutamine",
+                        "Dobutamine Infusion",
+                        fluidRow(
+                          column(6,
+                                 sliderInput("dobu_dose", "Dobutamine Dose (mcg/kg/min)", value = 3, min = 1, max = 20),
+                                 sliderInput("dobu_BB", "Bodyweight (Kg)", value = 50, min = 40, max = 100),
+                                 sliderInput("dobu_amount", "Amount Dispensed (each ampul 250mg/5ml)", value = 1, min = 1, max = 4),
+                                 selectInput("dobu_syringe", "Total Dilution (ml)", choices = c(50,20), selected = 50)
+                          ),
+                          column(6,"explanation")
+                        ),
+                        fluidRow(
+                          column(12, 
+                                 textOutput("dobu_rate"),
+                                 textOutput("dobu_eta")
+                          )
+                        ),
+                        fluidRow(
+                          column(12,
+                                 tableOutput("dobu_table")
+                          )
+                        )
+                        ),
+               tabPanel("Dopamine",
+                        "Dopamine Infusion",
+                        fluidRow(
+                          column(6,
+                                 sliderInput("dopa_dose", "Dopamine Dose (mcg/kg/min)", value = 3, min = 1, max = 20),
+                                 sliderInput("dopa_BB", "Bodyweight (Kg)", value = 50, min = 40, max = 100),
+                                 sliderInput("dopa_amount", "Amount Dispensed (each ampul 200mg/5ml)", value = 1, min = 1, max = 4),
+                                 selectInput("dopa_syringe", "Total Dilution (ml)", choices = c(50,20), selected = 50)
+                          ),
+                          column(6,"explanation")
+                        ),
+                        fluidRow(
+                          column(12, 
+                                 textOutput("dopa_rate"),
+                                 textOutput("dopa_eta")
+                          )
+                        ),
+                        fluidRow(
+                          column(12,
+                                 tableOutput("dopa_table")
+                          )
+                        )
+                        ),
                
                "Vasodilator",
                tabPanel("Nicardipin", "nikardipin"),
@@ -51,7 +95,7 @@ ui <- navbarPage(
                tabPanel("Hiperglikemia", "texas"),
                tabPanel("Ketoacidosis-HHS"),
                
-               "Analgetics, Sedatives, Muscle Relaxant",
+               "Analgetics & Sedatives",
                tabPanel("Fentanyl"),
                tabPanel("Morfin"),
                tabPanel("Petidin"),
@@ -71,9 +115,11 @@ ui <- navbarPage(
 # Define server logic 
 server <- function(input, output) {
   
-  n_r <- reactive(((input$nor_dose * 60 * input$nor_BB)/((input$nor_amount * 4000)/as.numeric(input$nor_syringe))))
   bb <- reactive(seq(from=40,to=100,by=5))
-    
+
+############################ norepinefrine ##########################################    
+  n_r <- reactive(((input$nor_dose * 60 * input$nor_BB)/((input$nor_amount * 4000)/as.numeric(input$nor_syringe))))
+  
   output$nor_rate <- renderText({
     print(paste0("Infusion Rate: ", n_r(), " ml/hour"))
   })
@@ -97,7 +143,66 @@ server <- function(input, output) {
     print(nor_tab)
     
   }, rownames = TRUE, striped = T)
+
+############################ Dobutamine ########################################## 
+  
+  dobu_r <- reactive(((input$dobu_dose * 60 * input$dobu_BB)/((input$dobu_amount * 250000)/as.numeric(input$dobu_syringe))))
+  
+  output$dobu_rate <- renderText({
+    print(paste0("Infusion Rate: ", dobu_r(), " ml/hour"))
+  })
+  output$dobu_eta <- renderText({
+    dobu_eta <- round(as.numeric(input$dobu_syringe)/dobu_r(),2)
+    print(paste0("Estimated Refill Time: ", dobu_eta, " hour"))
+  })
+  
+  output$dobu_table <- renderTable({
+    dose <- seq(from=1, to=20, by=1)
+    bb <- bb()
+    
+    dobu_tab = matrix(NA, nrow = length(dose), ncol = length(bb))
+    for (i in 1:length(dose)) {
+      for (j in 1:length(bb)) {
+        dobu_tab[i,j] = print(dose[i] * 60 * bb[j] * as.numeric(input$dobu_syringe) / (250000 * input$dobu_amount))
+      }
+    }
+    colnames(dobu_tab) = bb
+    rownames(dobu_tab) = dose
+    print(dobu_tab)
+    
+  }, rownames = TRUE, striped = T)
+  
+################### Dopamine #####################################################
+  dopa_r <- reactive(((input$dopa_dose * 60 * input$dopa_BB)/((input$dopa_amount * 200000)/as.numeric(input$dopa_syringe))))
+  
+  output$dopa_rate <- renderText({
+    print(paste0("Infusion Rate: ", dopa_r(), " ml/hour"))
+  })
+  output$dopa_eta <- renderText({
+    dopa_eta <- round(as.numeric(input$dopa_syringe)/dopa_r(),2)
+    print(paste0("Estimated Refill Time: ", dopa_eta, " hour"))
+  })
+  
+  output$dopa_table <- renderTable({
+    dose <- seq(from=1, to=20, by=1)
+    bb <- bb()
+    
+    dopa_tab = matrix(NA, nrow = length(dose), ncol = length(bb))
+    for (i in 1:length(dose)) {
+      for (j in 1:length(bb)) {
+        dopa_tab[i,j] = print(dose[i] * 60 * bb[j] * as.numeric(input$dopa_syringe) / (200000 * input$dopa_amount))
+      }
+    }
+    colnames(dopa_tab) = bb
+    rownames(dopa_tab) = dose
+    print(dopa_tab)
+    
+  }, rownames = TRUE, striped = T)
+  
+  
 }
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+
+# sudo cp ~/project/lazy_infusion/lazy_infusion/app.R /srv/shiny-server/lazy_infusion/
