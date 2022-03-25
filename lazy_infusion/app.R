@@ -88,7 +88,7 @@ ui <- navbarPage(
                         "Nicardipine Infusion",
                         fluidRow(
                           column(6,
-                                 sliderInput("nica_dose", "Nicardipine Dose (mcg/kg/hour)", value = 1, min = 0.5, max = 5),
+                                 sliderInput("nica_dose", "Nicardipine Dose (mcg/kg/min)", value = 1, min = 0.5, max = 5),
                                  sliderInput("nica_BB", "Bodyweight (Kg)", value = 50, min = 40, max = 100),
                                  sliderInput("nica_amount", "Amount Dispensed (each ampul 10mg/10ml)", value = 5, min = 1, max = 5),
                                  selectInput("nica_syringe", "Total Dilution (ml)", choices = c(50,20), selected = 50)
@@ -108,8 +108,40 @@ ui <- navbarPage(
                           )
                         )
                         ),
-               tabPanel("ISDN"),
-               tabPanel("Nitroglycerin"),
+               tabPanel("ISDN",
+                        "Isosorbide Dinitrat Infusion",
+                        fluidRow(
+                          column(6,
+                                 sliderInput("isdn_dose", "ISDN Dose (mg/hour)", value = 1, min = 1, max = 10),
+                                 sliderInput("isdn_amount", "Amount Dispensed (each ampul 10mg/10ml)", value = 5, min = 1, max = 5),
+                                 selectInput("isdn_syringe", "Total Dilution (ml)", choices = c(50,20), selected = 50)
+                          ),
+                          column(6,"explanation")
+                        ),
+                        fluidRow(
+                          column(12, 
+                                 textOutput("isdn_rate"),
+                                 textOutput("isdn_eta")
+                          )
+                        )
+                        ),
+               tabPanel("Nitroglycerin",
+                        "Nitroglycerin Infusion",
+                        fluidRow(
+                          column(6,
+                                 sliderInput("ntg_dose", "Nitroglycerin Dose (mcg/min)", value = 10, min = 5, max = 100),
+                                 sliderInput("ntg_amount", "Amount Dispensed (each ampul 10mg/10ml)", value = 5, min = 1, max = 5),
+                                 selectInput("ntg_syringe", "Total Dilution (ml)", choices = c(50,20), selected = 50)
+                          ),
+                          column(6,"explanation")
+                        ),
+                        fluidRow(
+                          column(12, 
+                                 textOutput("ntg_rate"),
+                                 textOutput("ntg_eta")
+                          )
+                        )
+                        ),
                
                "Diuretics",
                tabPanel("Furosemid"),
@@ -263,7 +295,30 @@ server <- function(input, output) {
 
 ############################################### ISDN ###############################################
   
+  isdn_r <- reactive(((input$isdn_dose)/((input$isdn_amount * 10)/as.numeric(input$isdn_syringe))))
+  
+  output$isdn_rate <- renderText({
+    print(paste0("Infusion Rate: ", isdn_r(), " ml/hour"))
+  })
+  output$isdn_eta <- renderText({
+    isdn_eta <- round(as.numeric(input$isdn_syringe)/isdn_r(),2)
+    print(paste0("Estimated Refill Time: ", isdn_eta, " hour"))
+  })
+  
+  
+  
 ############################################### NTG ################################################
+  
+  ntg_r <- reactive(((input$ntg_dose * 60)/((input$ntg_amount * 10000)/as.numeric(input$ntg_syringe))))
+  
+  output$ntg_rate <- renderText({
+    print(paste0("Infusion Rate: ", ntg_r(), " ml/hour"))
+  })
+  output$ntg_eta <- renderText({
+    ntg_eta <- round(as.numeric(input$ntg_syringe)/ntg_r(),2)
+    print(paste0("Estimated Refill Time: ", ntg_eta, " hour"))
+  })
+  
   
 ############################################### FUROSEMID ##########################################
   
