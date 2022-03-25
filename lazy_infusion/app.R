@@ -84,7 +84,30 @@ ui <- navbarPage(
                         ),
                
                "Vasodilator",
-               tabPanel("Nicardipin", "nikardipin"),
+               tabPanel("Nicardipin", 
+                        "Nicardipine Infusion",
+                        fluidRow(
+                          column(6,
+                                 sliderInput("nica_dose", "Nicardipine Dose (mcg/kg/hour)", value = 1, min = 0.5, max = 5),
+                                 sliderInput("nica_BB", "Bodyweight (Kg)", value = 50, min = 40, max = 100),
+                                 sliderInput("nica_amount", "Amount Dispensed (each ampul 10mg/10ml)", value = 5, min = 1, max = 5),
+                                 selectInput("nica_syringe", "Total Dilution (ml)", choices = c(50,20), selected = 50)
+                          ),
+                          column(6,"explanation")
+                        ),
+                        fluidRow(
+                          column(12, 
+                                 textOutput("nica_hour_rate"),
+                                 textOutput("nica_rate"),
+                                 textOutput("nica_eta")
+                          )
+                        ),
+                        fluidRow(
+                          column(12,
+                                 tableOutput("nica_table")
+                          )
+                        )
+                        ),
                tabPanel("ISDN"),
                tabPanel("Nitroglycerin"),
                
@@ -92,15 +115,21 @@ ui <- navbarPage(
                tabPanel("Furosemid"),
                
                "Insulin",
-               tabPanel("Hiperglikemia", "texas"),
-               tabPanel("Ketoacidosis-HHS"),
+               tabPanel("Insulin", "texas"),
                
-               "Analgetics & Sedatives",
+               "Antikonvulsant",
+               tabPanel("Fenitoin", "fenitoin"),
+               tabPanel("Fenobarbital", "fenobarbital"),
+               
+               "Analgetics",
                tabPanel("Fentanyl"),
                tabPanel("Morfin"),
-               tabPanel("Petidin"),
+               
+               "Sedatives",
                tabPanel("Propofol"),
                tabPanel("Midazolam"),
+               
+               "Relaxant",
                tabPanel("Rocuronium"),
                
                "Gastroprotector",
@@ -199,7 +228,60 @@ server <- function(input, output) {
     
   }, rownames = TRUE, striped = T)
   
+############################################### NIKARDIPIN #########################################
   
+  nica_r <- reactive(((input$nica_dose * 60 * input$nica_BB)/((input$nica_amount * 10000)/as.numeric(input$nica_syringe))))
+  
+  output$nica_hour_rate <- renderText({
+    ncr <- (input$nica_dose * 60 * input$nica_BB)/1000
+    print(paste0("Hourly Dose Equivalent: ", ncr , " mg/hour"))
+  })
+  
+  output$nica_rate <- renderText({
+    print(paste0("Infusion Rate: ", nica_r(), " ml/hour"))
+  })
+  output$nica_eta <- renderText({
+    nica_eta <- round(as.numeric(input$nica_syringe)/nica_r(),2)
+    print(paste0("Estimated Refill Time: ", nica_eta, " hour"))
+  })
+  
+  output$nica_table <- renderTable({
+    dose <- seq(from=0.5, to=5, by=0.5)
+    bb <- bb()
+    
+    nica_tab = matrix(NA, nrow = length(dose), ncol = length(bb))
+    for (i in 1:length(dose)) {
+      for (j in 1:length(bb)) {
+        nica_tab[i,j] = print(dose[i] * 60 * bb[j] * as.numeric(input$nica_syringe) / (10000 * input$nica_amount))
+      }
+    }
+    colnames(nica_tab) = bb
+    rownames(nica_tab) = dose
+    print(nica_tab)
+    
+  }, rownames = TRUE, striped = T)
+
+############################################### ISDN ###############################################
+  
+############################################### NTG ################################################
+  
+############################################### FUROSEMID ##########################################
+  
+############################################### INSULIN ############################################
+  
+############################################### FENTANYL ###########################################
+  
+############################################### MORFIN #############################################
+  
+############################################### PROPOFOL ###########################################
+  
+############################################### MIDAZOLAM ##########################################
+  
+############################################### ROCURONIUM #########################################
+  
+############################################### PANTOPRAZOLE #######################################
+  
+    
 }
 
 # Run the application 
