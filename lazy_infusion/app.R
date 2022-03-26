@@ -91,7 +91,7 @@ ui <- navbarPage(
                                  sliderInput("nica_dose", "Nicardipine Dose (mcg/kg/min)", value = 1, min = 0.5, max = 5),
                                  sliderInput("nica_BB", "Bodyweight (Kg)", value = 50, min = 40, max = 100),
                                  sliderInput("nica_amount", "Amount Dispensed (each ampul 10mg/10ml)", value = 5, min = 1, max = 5),
-                                 selectInput("nica_syringe", "Total Dilution (ml)", choices = c(50,20), selected = 50)
+                                 selectInput("nica_syringe", "Total Dilution (ml)", choices = c(50), selected = 50)
                           ),
                           column(6,"explanation")
                         ),
@@ -114,7 +114,7 @@ ui <- navbarPage(
                           column(6,
                                  sliderInput("isdn_dose", "ISDN Dose (mg/hour)", value = 1, min = 1, max = 10),
                                  sliderInput("isdn_amount", "Amount Dispensed (each ampul 10mg/10ml)", value = 5, min = 1, max = 5),
-                                 selectInput("isdn_syringe", "Total Dilution (ml)", choices = c(50,20), selected = 50)
+                                 selectInput("isdn_syringe", "Total Dilution (ml)", choices = c(50), selected = 50)
                           ),
                           column(6,"explanation")
                         ),
@@ -131,7 +131,7 @@ ui <- navbarPage(
                           column(6,
                                  sliderInput("ntg_dose", "Nitroglycerin Dose (mcg/min)", value = 10, min = 5, max = 100),
                                  sliderInput("ntg_amount", "Amount Dispensed (each ampul 10mg/10ml)", value = 5, min = 1, max = 5),
-                                 selectInput("ntg_syringe", "Total Dilution (ml)", choices = c(50,20), selected = 50)
+                                 selectInput("ntg_syringe", "Total Dilution (ml)", choices = c(50), selected = 50)
                           ),
                           column(6,"explanation")
                         ),
@@ -144,7 +144,23 @@ ui <- navbarPage(
                         ),
                
                "Diuretics",
-               tabPanel("Furosemid"),
+               tabPanel("Furosemide",
+                        "Furosemide Infusion",
+                        fluidRow(
+                          column(6,
+                                 sliderInput("furo_dose", "Furosemide Dose (mg/hour)", value = 3, min = 1, max = 20),
+                                 sliderInput("furo_amount", "Amount Dispensed (each ampul 20mg/2ml)", value = 5, min = 1, max = 10),
+                                 selectInput("furo_syringe", "Total Dilution (ml)", choices = c(20,50), selected = 20)
+                          ),
+                          column(6,"explanation")
+                        ),
+                        fluidRow(
+                          column(12, 
+                                 textOutput("furo_rate"),
+                                 textOutput("furo_eta")
+                          )
+                        )
+                        ),
                
                "Insulin",
                tabPanel("Insulin", "texas"),
@@ -321,6 +337,17 @@ server <- function(input, output) {
   
   
 ############################################### FUROSEMID ##########################################
+  
+  furo_r <- reactive(((input$furo_dose)/((input$furo_amount * 20)/as.numeric(input$furo_syringe))))
+  
+  output$furo_rate <- renderText({
+    print(paste0("Infusion Rate: ", furo_r(), " ml/hour"))
+  })
+  output$furo_eta <- renderText({
+    furo_eta <- round(as.numeric(input$furo_syringe)/furo_r(),2)
+    print(paste0("Estimated Refill Time: ", furo_eta, " hour"))
+  })
+  
   
 ############################################### INSULIN ############################################
   
