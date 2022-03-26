@@ -163,10 +163,47 @@ ui <- navbarPage(
                         ),
                
                "Insulin",
-               tabPanel("Insulin", "texas"),
+               tabPanel("Insulin", 
+                        "Insulin Infusion",
+                        fluidRow(
+                          column(6,
+                                 sliderInput("insulin_dose", "Insulin Dose (unit/hour)", value = 4, min = 0.5, max = 20),
+                                 sliderInput("insulin_amount", "Amount Dispensed (Unit)", value = 50, min = 20, max = 100),
+                                 selectInput("insulin_syringe", "Total Dilution (ml)", choices = c(50,20), selected = 50)
+                          ),
+                          column(6,"explanation")
+                        ),
+                        fluidRow(
+                          column(12, 
+                                 textOutput("insulin_rate"),
+                                 textOutput("insulin_eta")
+                          )
+                        )
+                        ),
                
-               "Antikonvulsant",
-               tabPanel("Fenitoin", "fenitoin"),
+               "Anticonvulsant",
+               tabPanel("Fenitoin", 
+                        "Fenitoin Bolus Infusion",
+                        fluidRow(
+                          column(6,
+                                 sliderInput("feni_dose", "Fenitoin Loading Dose (mg/kg)", value = 20, min = 1, max = 20),
+                                 sliderInput("feni_BB", "Bodyweight (Kg)", value = 50, min = 2.5, max = 70),
+                                 sliderInput("feni_limit", "Maximum Infusion Rate (50 mg / min)", value = 50, min = 1, max = 50),
+                                 #sliderInput("feni_amount", "Amount Dispensed (100 mg / 2 ml)", value = 10, min = 1, max = 20),
+                                 #selectInput("feni_syringe", "Total Dilution (ml)", choices = c(50,20), selected = 20),
+                                 
+                          ),
+                          column(6,"explanation")
+                        ),
+                        fluidRow(
+                          column(12, 
+                                 textOutput("feni_rate"),
+                                 textOutput("feni_eta"),
+                                 textOutput("feni_needed")
+                                 
+                          )
+                        )
+                        ),
                tabPanel("Fenobarbital", "fenobarbital"),
                
                "Analgetics",
@@ -351,7 +388,51 @@ server <- function(input, output) {
   
 ############################################### INSULIN ############################################
   
+  insulin_r <- reactive(((input$insulin_dose)/((input$insulin_amount * 1)/as.numeric(input$insulin_syringe))))
+  
+  output$insulin_rate <- renderText({
+    print(paste0("Infusion Rate: ", insulin_r(), " ml/hour"))
+  })
+  output$insulin_eta <- renderText({
+    insulin_eta <- round(as.numeric(input$insulin_syringe)/insulin_r(),2)
+    print(paste0("Estimated Refill Time: ", insulin_eta, " hour"))
+  })
+
+############################################### Phenitoin ##########################################
+  feni_r <- reactive((as.numeric(input$feni_dose * input$feni_BB)/100*2)/(input$feni_dose * input$feni_BB / input$feni_limit)*60)
+  
+  output$feni_rate <- renderText({
+    print(paste0("Infusion Rate: ", feni_r(), " ml/hour"))
+  })
+  output$feni_eta <- renderText({
+    feni_eta <- round(as.numeric(input$feni_dose * input$feni_BB)/input$feni_limit,2)
+    print(paste0("Estimated Infusion Time: ", feni_eta, " Minutes"))
+  })
+  
+  output$feni_needed <- renderText({
+    feni_needed <- round(as.numeric(input$feni_dose * input$feni_BB)/100,1)
+    print(paste0("Fenitoin Needed: ", feni_needed, " Ampules (100 mg/2 ml)"))
+  })
+  
+  output$feni_table <- renderTable({
+    dose <- seq(from=1, to=20, by=1)
+    bb <- input$feni_BB
+    
+    feni_tab = matrix(NA, nrow = length(dose), ncol = length(bb))
+    for (i in 1:length(dose)) {
+      for (j in 1:length(bb)) {
+        feni_tab[i,j] = print(dose[i] * bb[j] * as.numeric(input$feni_syringe) / (100 * input$feni_amount))
+      }
+    }
+    colnames(feni_tab) = bb
+    rownames(feni_tab) = dose
+    print(feni_tab)
+    
+  }, rownames = TRUE, striped = T)
+    
 ############################################### FENTANYL ###########################################
+  
+  
   
 ############################################### MORFIN #############################################
   
